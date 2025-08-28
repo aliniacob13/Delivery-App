@@ -146,5 +146,47 @@ static int choose_number_between_1_n(int n) {
     
         return static_cast<float>(value);
     }
+
+    static float read_non_negative_float(std::istream& is) {
+        std::string line;
+        float value;
+    
+        while (true) {
+            
+            if (!std::getline(is, line)) {
+                
+                throw std::runtime_error("Nu am putut citi datele.");
+            }
+    
+            try {
+                
+                size_t pos;
+                value = std::stof(line, &pos);
+    
+                
+                if (pos != line.size()) {
+                    throw std::invalid_argument("Caracter invalid gasit");
+                }
+    
+                
+                if (value < 0) {
+                    throw std::invalid_argument("Numarul nu poate fi negativ.");
+                }
+    
+                
+                break;
+            }
+            catch (const std::invalid_argument& e) {
+                std::cout << "Input invalid (" << e.what()
+                          << "). Introduceti un numar pozitiv:\n";
+                
+            }
+            catch (const std::out_of_range&) {
+                std::cout << "Numarul e prea mare. Introduceti un numar pozitiv:\n";
+            }
+        }
+    
+        return value;
+    }
 };
 
