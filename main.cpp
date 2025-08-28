@@ -12,6 +12,13 @@
 #include <unordered_map>
 #include <functional>
 #include "db_env.hpp"
+#include "util_helper.hpp"
+#define asInt            ::Util::asInt
+#define asFloat          ::Util::asFloat
+#define asStr            ::Util::asStr
+#define erase_first_if   ::Util::erase_first_if
+#define erase_all_if     ::Util::erase_all_if
+#define rawptr          ::Util::rawptr
 class Review
 {
 protected:
@@ -940,36 +947,36 @@ std::ostream &operator<<(std::ostream &os, const Comanda &c)
     return os;
 }
 
-template <class T>
-inline T *rawptr(T *p) { return p; }
-template <class T>
-inline T *rawptr(const std::unique_ptr<T> &p) { return p.get(); }
-template <class Vec, class Predicat>
-bool erase_first_if(Vec &v, Predicat pred)
-{
-    for (std::size_t i = 0; i < v.size(); ++i)
-    {
-        auto *p = rawptr(v[i]);
-        if (p && pred(*p))
-        {
-            v.erase(v.begin() + i);
-            return true;
-        }
-    }
-    return false;
-}
-template <class Vec, class Predicat>
-void erase_all_if(Vec &v, Predicat pred)
-{
-    const auto before = v.size();
-    v.erase(std::remove_if(v.begin(), v.end(),
-                           [&](auto &h)
-                           {
-                               auto *p = rawptr(h);
-                               return p && pred(*p);
-                           }),
-            v.end());
-}
+// template <class T>
+// inline T *rawptr(T *p) { return p; }
+// template <class T>
+// inline T *rawptr(const std::unique_ptr<T> &p) { return p.get(); }
+// template <class Vec, class Predicat>
+// bool erase_first_if(Vec &v, Predicat pred)
+// {
+//     for (std::size_t i = 0; i < v.size(); ++i)
+//     {
+//         auto *p = rawptr(v[i]);
+//         if (p && pred(*p))
+//         {
+//             v.erase(v.begin() + i);
+//             return true;
+//         }
+//     }
+//     return false;
+// }
+// template <class Vec, class Predicat>
+// void erase_all_if(Vec &v, Predicat pred)
+// {
+//     const auto before = v.size();
+//     v.erase(std::remove_if(v.begin(), v.end(),
+//                            [&](auto &h)
+//                            {
+//                                auto *p = rawptr(h);
+//                                return p && pred(*p);
+//                            }),
+//             v.end());
+// }
 
 class Staff
 {
@@ -1832,9 +1839,9 @@ public:
     }
 };
 
-inline int asInt(const char *s) { return s ? std::stoi(s) : 0; }
-inline float asFloat(const char *s) { return s ? std::stof(s) : 0.0f; }
-inline std::string asStr(const char *s) { return s ? std::string(s) : ""; }
+// inline int asInt(const char *s) { return s ? std::stoi(s) : 0; }
+// inline float asFloat(const char *s) { return s ? std::stof(s) : 0.0f; }
+// inline std::string asStr(const char *s) { return s ? std::string(s) : ""; }
 
 template <typename Out>
 class RowAdapter
