@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <string>
 
-struct Util {
+class Util {
+    public:
     template <class T>
     static T* rawptr(T* p) noexcept { return p; }
 
