@@ -1482,7 +1482,7 @@ std::ostream &operator<<(std::ostream &os, const Staff &s)
     }
     else
     {
-        os << "Unknown staff type.\n";
+        os << "Tip necunoscut.\n";
     }
     s.afisare(os);
     return os;
