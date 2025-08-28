@@ -4,14 +4,12 @@
 #include <string>
 
 struct Util {
-    // --- Pointers (pentru unique_ptr sau pointeri simpli) ---
     template <class T>
     static T* rawptr(T* p) noexcept { return p; }
 
     template <class T>
     static T* rawptr(const std::unique_ptr<T>& p) noexcept { return p.get(); }
 
-    // --- Algoritmi de șters elemente după predicate ---
     template <class Vec, class Predicat>
     static bool erase_first_if(Vec& v, Predicat pred) {
         for (std::size_t i = 0; i < v.size(); ++i) {
@@ -34,7 +32,6 @@ struct Util {
                 v.end());
     }
 
-    // --- Conversii sigure din MYSQL_ROW (char*) ---
     static int asInt(const char* s) {
         return s ? std::stoi(s) : 0;
     }
