@@ -13,12 +13,12 @@
 #include <functional>
 #include "db_env.hpp"
 #include "util_helper.hpp"
-#define asInt            ::Util::asInt
-#define asFloat          ::Util::asFloat
-#define asStr            ::Util::asStr
-#define erase_first_if   ::Util::erase_first_if
-#define erase_all_if     ::Util::erase_all_if
-#define rawptr          ::Util::rawptr
+#define asInt ::Util::asInt
+#define asFloat ::Util::asFloat
+#define asStr ::Util::asStr
+#define erase_first_if ::Util::erase_first_if
+#define erase_all_if ::Util::erase_all_if
+#define rawptr ::Util::rawptr
 class Review
 {
 protected:
@@ -158,11 +158,11 @@ class Client
 public:
     Client(std::string nume = "nedefinit", std::string prenume = "nedefinit", std::string password = "nedefinit") : id(++idCounter), nume(nume), prenume(prenume), password(password)
     {
-        std::cout << "Clientul " << nume << " " << prenume << " a fost creat.\n";
+        std::cout << "Clientul " << nume << " " << prenume << " a fost creat. ID=" << id << "\n";
     }
     Client(int id, std::string nume = "nedefinit", std::string prenume = "nedefinit", std::string password = "nedefinit") : id(id), nume(nume), prenume(prenume), password(password)
     {
-        std::cout << "Clientul " << nume << " " << prenume << " a fost creat.\n";
+        std::cout << "Clientul " << nume << " " << prenume << " a fost creat. ID=" << id << "\n";
     }
     Client(int id, std::string nume, std::string prenume, std::string password, std::string categorie) : id(id), nume(nume), prenume(prenume), password(password), categorie(categorie) {}
 
@@ -212,6 +212,10 @@ public:
     std::string getCategorie() const
     {
         return categorie;
+    }
+    void setParola(const std::string &p)
+    {
+        password = p;
     }
     friend std::ostream &operator<<(std::ostream &os, const Client &c);
     ~Client() = default;
@@ -1068,7 +1072,7 @@ public:
         for (auto &comanda : comenzi)
         {
             if (comanda->isAnulata())
-            { // <<— nou
+            {
                 std::cout << "Comanda " << idComanda << " este anulata.\n";
                 return;
             }
@@ -1179,7 +1183,6 @@ public:
                 return true;
         return false;
     }
-    // primește un int ca argument de intrare și returnează un std::string
     bool livreazaUrmatoareaComandaPrioritar(const std::function<std::string(int)> &categorieClient, int &idComandaOut, std::string &categorieOut);
 };
 bool Livrator::livreazaUrmatoareaComandaPrioritar(const std::function<std::string(int)> &categorieClient, int &idComandaOut, std::string &categorieOut)
@@ -2872,7 +2875,7 @@ void DatabaseFacade::insertReviewLivrator(int idComanda, int idClient, int nota,
 void DatabaseFacade::updateRestaurantRating(int idRestaurant, double rating)
 {
     std::ostringstream r;
-    r << std::fixed << std::setprecision(1) << rating; // păstrăm o zecimală
+    r << std::fixed << std::setprecision(1) << rating;
     std::string q = "UPDATE restaurant SET rating=" + r.str() +
                     " WHERE id=" + std::to_string(idRestaurant);
     if (mysql_query(conn, q.c_str()))
@@ -3032,7 +3035,7 @@ int main()
     Aplicatie &app = Aplicatie::getInstance();
     try
     {
-        DBConfig cfg = load_db_config(); 
+        DBConfig cfg = load_db_config();
         DatabaseFacade db(cfg.getServer().c_str(), cfg.getUser().c_str(), cfg.getPass().c_str(), cfg.getName().c_str());
 
         auto restaurants = db.getAllRestaurants();
@@ -3233,7 +3236,29 @@ int main()
                                     comUP->calculatePretTotal();
                                     double total = comUP->getPretTotal();
 
-                                    std::cout << "\nTotal comanda: " << std::fixed << std::setprecision(2) << total << "\n";
+                                    auto discountFor = [](const std::string &cat) -> double
+                                    {
+                                        if (cat == "Gold")
+                                            return 0.20;
+                                        if (cat == "Silver")
+                                            return 0.15;
+                                        if (cat == "Bronze")
+                                            return 0.10;
+                                        return 0.0;
+                                    };
+
+                                    auto round2 = [](double x)
+                                    { return std::round(x * 100.0) / 100.0; };
+
+                                    double disc = discountFor(client->getCategorie());
+                                    double totalCuDiscount = round2(total * (1.0 - disc));
+
+                                    std::cout << "\nTotal (fara discount): " << std::fixed << std::setprecision(2) << total << "\n";
+                                    if (disc > 0.0)
+                                    {
+                                        std::cout << "Categoria: " << client->getCategorie() << " -> discount " << (int)std::round(disc * 100) << "%\n";
+                                    }
+                                    std::cout << "Total de plata: " << std::fixed << std::setprecision(2) << totalCuDiscount << "\n";
                                     std::cout << "Finalizati comanda? (da/nu): ";
                                     if (MenuHelper::DaorNu() != "da")
                                     {
@@ -3241,7 +3266,9 @@ int main()
                                         continue;
                                     }
 
-                                    unsigned long long newId = db.addComanda(restaurant->getId(), client->getId(), total);
+                                    
+
+                                    unsigned long long newId = db.addComanda(restaurant->getId(), client->getId(), totalCuDiscount);
 
                                     auto comUP2 = std::make_unique<Comanda>((int)newId, restaurant->getId(), client->getId(), 0);
                                     for (auto *p : selectie)
@@ -3252,22 +3279,24 @@ int main()
                                                           : dynamic_cast<Desert *>(p) ? "Desert"
                                                                                       : "Bautura";
 
+                                        
+                                        double pretUnitDiscount = round2(p->getPret() * (1.0 - disc));
+
                                         db.addComandaItemSnapshot(
                                             newId,
                                             p->getId(),
                                             tip,
                                             1,
                                             p->getNume(),
-                                            p->getPret(),
+                                            pretUnitDiscount,
                                             p->getKcal());
                                     }
-                                    comUP2->calculatePretTotal();
 
-                                    Comanda *cRaw = comUP2.get();
+                                    comUP2->calculatePretTotal(); 
                                     app += std::move(comUP2);
 
-                                    std::cout << "Comanda #" << newId << " a fost plasata. Total: "
-                                              << std::fixed << std::setprecision(2) << total << ".\n";
+                                    std::cout << "Comanda #" << newId << " a fost plasata. Total platit: "
+                                              << std::fixed << std::setprecision(2) << totalCuDiscount << ".\n";
                                 }
                                 else if (optiuneClientLogged == 2)
                                 {
@@ -3284,7 +3313,7 @@ int main()
 
                                     std::vector<Comanda *> livrate;
                                     for (auto &cup : app.getComenzi())
-                                        if (cup && cup->getIdClient() == client->getId() && cup->isFinalizata() && cup->isLivrata()) // exclude anulate
+                                        if (cup && cup->getIdClient() == client->getId() && cup->isFinalizata() && cup->isLivrata()) 
                                             livrate.push_back(cup.get());
 
                                     using std::fixed;
@@ -3473,6 +3502,14 @@ int main()
                         try
                         {
                             db.updateClientPassword(id, newPass);
+                            auto &clienti = app.getClienti();
+                            auto it = std::find_if(clienti.begin(), clienti.end(),
+                                                   [id](const std::unique_ptr<Client> &c)
+                                                   {
+                                                       return c && c->getId() == id;
+                                                   });
+                            if (it != clienti.end())
+                                (*it)->setParola(newPass);
                             std::cout << "Parola a fost actualizata cu succes.\n";
                         }
                         catch (const std::exception &e)
@@ -3527,7 +3564,7 @@ int main()
                                     std::cout << "2. Adauga casier\n";
                                     std::cout << "3. Adauga livrator\n";
                                     std::cout << "4. Adauga produs\n";
-                                    std::cout << "5. Distribuie comezi\n";
+                                    std::cout << "5. Distribuie comenzi\n";
                                     std::cout << "6. Prepara comanda\n";
                                     std::cout << "7. Vezi livratorii + rating mediu\n";
                                     std::cout << "8. Concediaza livratorii cu rating <= 3\n";
@@ -4133,7 +4170,7 @@ int main()
                                     for (const auto &rup : app.getRestaurante())
                                         if (rup)
                                             mx = std::max(mx, rup->getId());
-                                    return mx + 1; 
+                                    return mx + 1;
                                 };
 
                                 int idRestaurant = nextRestaurantId();

@@ -22,8 +22,7 @@ inline DBConfig load_db_config(const std::string& path = ".env") {
 
     std::string line;
     while (std::getline(f, line)) {
-        // suport mic pentru CRLF pe Windows
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        
 
         if (line.rfind("DB_SERVER=", 0) == 0)  cfg.setServer(line.substr(10));  
         else if (line.rfind("DB_USER=",   0) == 0) cfg.setUser(line.substr(8));    

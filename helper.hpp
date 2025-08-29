@@ -95,7 +95,6 @@ static int choose_number_between_1_n(int n) {
             trim(line);
             toLower(line);
 
-            // lowercase
             for (auto &c : line)
                 c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
 
